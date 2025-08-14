@@ -52,3 +52,32 @@ class MemberViewSet(viewsets.ModelViewSet):
 class LoanViewSet(viewsets.ModelViewSet):
     queryset = Loan.objects.all()
     serializer_class = LoanSerializer
+
+    @action(detail=True, methods=['post'])
+    def extend_due_date(self, request, pk=None):
+        additional_days = request.data.get("additional_days", 0)
+
+        if additional_days < 0:
+            return Response({'error': 'Additional days must be > 0'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            loan = Loan.objects.get(id=pk, is_returned=False)
+        except Loan.DoesNotExist:
+            return Response({'error': 'Loan does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if loan.is_overdue():
+            return Response({'error': 'This loan is overdue'}, status=status.HTTP_400_BAD_REQUEST)
+
+        loan.extend_due_date(additional_days=additional_days)
+        loan.save()
+
+        return Response({'status': 'Due date extended.', 'loan': LoanSerializer(instance=loan).data}, status=status.HTTP_200_OK)
+
+
+
+
+
+
+
+
+

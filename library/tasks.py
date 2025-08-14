@@ -18,3 +18,17 @@ def send_loan_notification(loan_id):
         )
     except Loan.DoesNotExist:
         pass
+
+@shared_task
+def check_overdue_loans():
+    try:
+        for overdue_loan in Loan.get_overdue_loans():
+            send_mail(
+                subject='Book Loaned Successfully',
+                message=f'Hello {overdue_loan.member.user.username},\n\nYour loan is overdue."{overdue_loan.book.title}".\nPlease return it ASAP.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[overdue_loan.member.user.email],
+                fail_silently=False,
+            )
+    except Exception:
+        print("Exception")
